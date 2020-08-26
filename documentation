@@ -1,0 +1,752 @@
+# Emotionally Intelligent Chatbot
+
+This is a readme file our Chatbot. It is a machine-learning based chatbot that detects human emotions. 
+
+# Requirements to run the code
+
+.NET FRAMEWORK 3.4
+ML.NET Core Library
+Nugget Packet Manager 
+SDK 4
+Python 3.6
+Bot Framework Emulators
+
+# Here the step by step procedure of project is explained along with the source code. 
+# This code is for Python. 
+
+# Code for loading and Understanding the data
+
+  "source": [
+    "import pandas as pd \n",
+    "dataFrame=pd.read_csv(\"DATA.csv\",encoding='utf-8')\n",
+    "x=dataFrame.values[:,1]\n",
+    "y=dataFrame.values[:,0]\n",
+    "print(dataFrame.head())\n",
+    "print(dataFrame.info())\n",
+    "print(x.shape)\n",
+    "print(y.shape)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "   Emotion_value                                          Text_data\n",
+      "0              0  [ On days when I feel close to my partner and ...\n",
+      "1              1  Every time I imagine that someone I love or I ...\n",
+      "2              2  When I had been obviously unjustly treated and...\n",
+      "3              3  When I think about the short time that we live...\n",
+      "4              4  At a gathering I found myself involuntarily si...\n",
+      "['on', 'days', 'when', 'i', 'feel', 'close', 'to', 'my', 'partner', 'and', 'other', 'friends', 'when', 'i', 'feel', 'at', 'peace', 'with', 'myself', 'and', 'also', 'experience', 'a', 'close', 'contact', 'with', 'people', 'whom', 'i', 'regard', 'greatly']\n"
+     ]
+    }
+   ],
+
+# Preprocessing the data
+
+"source": [
+    "# ------Preprocessing textual data--------\n",
+    "import string\n",
+    "from keras.preprocessing.text import text_to_word_sequence\n",
+    "from keras.preprocessing.text import Tokenizer\n",
+    "from keras.preprocessing.sequence import pad_sequences\n",
+    "text_lines = list()\n",
+    "spell=Speller(lang='en')\n",
+    "encode={\"joy\":0,\"fear\":1,\"anger\":2,\"sadness\":3,\"disgust\":4,\"shame\":5,\"guilt\":6}\n",
+    "data_copy=pd.read_csv('DATA.csv',encoding='utf-8')\n",
+    "data_copy['Emotion_value']=data_copy['Emotion_value'].apply(lambda x: encode[x])\n",
+    "print(data_copy.head())\n",
+    "lines = dataFrame[\"Text_data\"]\n",
+    "for line in lines:\n",
+
+# Correcting incorrect spelling
+
+  
+    "    spellings=spell(line)\n",
+
+# Creating tokens
+   
+    "    tokens = word_tokenize(spellings)\n",
+    "    tokens = [w.lower() for w in tokens]\n",
+    
+# Remove punctuations\n",
+    "    table = str.maketrans('', '', string.punctuation)\n",
+    "    stripped = [w.translate(table) for w in tokens]\n",
+    
+# Removing non alphabetic characters
+
+    "    words = [word for word in stripped if word.isalpha()]\n",
+    "    text_lines.append(words)\n",
+    
+# Print first preprocessed statement
+
+    "print(text_lines[0])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "[19, 184, 8, 1, 106, 94, 4, 5, 831, 6, 85, 55, 8, 1, 106, 18, 2665, 16, 129, 6, 205, 585, 3, 94, 651, 16, 63, 161, 1, 2263, 1756]\n",
+      "Unique tokens 8656\n",
+      "Vocab_size 8657\n",
+      "(7652, 50)\n",
+      "[  19  184    8    1  106   94    4    5  831    6   85   55    8    1\n",
+      "  106   18 2665   16  129    6  205  585    3   94  651   16   63  161\n",
+      "    1 2263 1756    0    0    0    0    0    0    0    0    0    0    0\n",
+      "    0    0    0    0    0    0    0    0]\n",
+      "[ 28 279   1  65  40  16  51  55   9  77 335   1   7 563   4 416  18  54\n",
+      "  16   5 191 100  42  68   0   0   0   0   0   0   0   0   0   0   0   0\n",
+      "   0   0   0   0   0   0   0   0   0   0   0   0   0   0]\n",
+      "[0. 0. 0. 0. 0. 0. 1.]\n"
+     ]
+    }
+
+# Code for Train-test
+
+ "source": [
+    "validation_split=0.2 #20% percent of data will be used as validation and 80% for training\n",
+    "max_length=50 #Maximum number of words that can occur in one sentence.\n",
+    "\n",
+    "tokenizer_obj=Tokenizer()\n",
+    "tokenizer_obj.fit_on_texts(text_lines)\n",
+    "sequences=tokenizer_obj.texts_to_sequences(text_lines)\n",
+    "print(sequences[0])\n",
+    "\n",
+
+# For printing ubique tokens
+
+    "word_index=tokenizer_obj.word_index\n",
+    "print(\"Unique tokens \" + str(len(word_index)))\n",
+    "\n",
+    "#print vocab size\n",
+    "vocab_size=len(tokenizer_obj.word_index)+1\n",
+    "print(\"Vocab_size \"+ str(vocab_size))\n",
+    "\n",
+
+# How to do extra padding for sentences having lengths greater than 50
+
+    "lines_pad=pad_sequences(sequences,maxlen=max_length,padding='post')\n",
+    "print(lines_pad.shape)\n",
+    "print(lines_pad[0])\n",
+    "category=data_copy['Emotion_value'].values\n",
+    "\n",
+    "# Creating one hot encodings for output labels\n",
+    "indices=np.arange(lines_pad.shape[0])\n",
+    "np.random.shuffle(indices)\n",
+    "lines_pad=lines_pad[indices]\n",
+    "category=category[indices]\n",
+    "\n",
+    "n_values = np.max(category) + 1\n",
+    "Y=np.eye(n_values)[category]\n",
+    "\n",
+
+# How to train rest and split 
+
+    "num_validation_samples=int(validation_split*lines_pad.shape[0])\n",
+    "X_train_pad=lines_pad[:-num_validation_samples]\n",
+    "print(X_train_pad[0])\n",
+    "y_train=Y[:-num_validation_samples]\n",
+    "print(y_train[0])\n",
+    "X_test_pad=lines_pad[-num_validation_samples:]\n",
+    "y_test=Y[-num_validation_samples:]\n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Loading Glove Vectors ...\n"
+     ]
+    }
+   ],
+
+# Next step is loading the Glove Vectors 
+# The Code is for Creating Glove Embedding Vectors using pretrained glove vector
+
+   "source": [
+    "import os\n",
+    "print(\"Loading Glove Vectors ...\")\n",
+    "embeddings_index = {}\n",
+    "EMBEDDING_DIM=300\n",
+    "f = open(os.path.join('', 'glove.42B.300d.txt'), 'r', encoding=\"utf-8\")\n",
+    "for line in f:\n",
+    "    values = line.split()\n",
+    "    word = values[0]\n",
+    "    coefs = np.asarray(values[1:], dtype='float32')\n",
+    "    embeddings_index[word] = coefs\n",
+    "f.close()\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Embedding Matrix Generated :  (8657, 300)\n"
+     ]
+    }
+   ],
+
+# How to Create word vectors from global set for the corpus
+
+   "source": [
+    "embedding_matrix = np.zeros((len(word_index) + 1, EMBEDDING_DIM))\n",
+    "for word, i in word_index.items():\n",
+    "    if word in embeddings_index.keys():\n",
+    "        embedding_vector = embeddings_index[word]\n",
+    "    if embedding_vector is not None:\n",
+    "        # words not found in embedding index will be all-zeros.\n",
+    "        embedding_matrix[i] = embedding_vector\n",
+    "\n",
+    "print(\"Embedding Matrix Generated : \", embedding_matrix.shape)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "metadata": {},
+   "outputs": [],
+
+# Defining Embedding layer for LSTM(Long Short Term Memory) model
+
+   "source": [ 
+    "embedding_layer = Embedding(len(word_index) + 1, EMBEDDING_DIM, weights=[embedding_matrix],\n",
+    "                            input_length=max_length, trainable=False)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Model: \"sequential\"\n",
+      "_________________________________________________________________\n",
+      "Layer (type)                 Output Shape              Param #   \n",
+      "=================================================================\n",
+      "embedding (Embedding)        (None, 50, 300)           2597100   \n",
+      "_________________________________________________________________\n",
+      "lstm (LSTM)                  (None, 32)                42624     \n",
+      "_________________________________________________________________\n",
+      "dense (Dense)                (None, 7)                 231       \n",
+      "=================================================================\n",
+ 
+# Shows the total parameters, trainable parameters and non-trinable parameters
+
+      "Total params: 2,639,955\n",
+      "Trainable params: 42,855\n",
+      "Non-trainable params: 2,597,100\n",
+      "_________________________________________________________________\n",
+      "None\n"
+     ]
+    }
+   ],
+
+# Next step is defining the model
+
+ "source": [
+    "model = Sequential()\n",
+    "model.add(embedding_layer)\n",
+    "model.add(LSTM(units=32, dropout=0.2, recurrent_dropout=0.25))\n",
+    "model.add(Dense(7, activation=\"softmax\"))\n",
+    "model.compile(loss=\"categorical_crossentropy\", optimizer=\"adam\", metrics=[\"accuracy\"])\n",
+    "print(model.summary())\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "filepath = \"model.h5\"\n",
+    "checkpoint = ModelCheckpoint(filepath, verbose=1, save_best_only=False, mode='auto')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "metadata": {
+    "scrolled": true
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Epoch 1/15\n",
+      "192/192 [==============================] - ETA: 0s - loss: 1.9398 - accuracy: 0.1599\n",
+      "Epoch 00001: saving model to model.h5\n",
+      "192/192 [==============================] - 16s 86ms/step - loss: 1.9398 - accuracy: 0.1599 - val_loss: 1.9302 - val_accuracy: 0.1810\n",
+      "Epoch 2/15\n",
+      "191/192 [============================>.] - ETA: 0s - loss: 1.8084 - accuracy: 0.2515\n",
+      "Epoch 00002: saving model to model.h5\n",
+      "192/192 [==============================] - 16s 83ms/step - loss: 1.8079 - accuracy: 0.2516 - val_loss: 1.7715 - val_accuracy: 0.2948\n",
+      "Epoch 3/15\n",
+      "191/192 [============================>.] - ETA: 0s - loss: 1.6260 - accuracy: 0.3524\n",
+      "Epoch 00003: saving model to model.h5\n",
+      "192/192 [==============================] - 19s 98ms/step - loss: 1.6263 - accuracy: 0.3523 - val_loss: 1.5666 - val_accuracy: 0.3824\n",
+      "Epoch 4/15\n",
+      "192/192 [==============================] - ETA: 0s - loss: 1.5099 - accuracy: 0.4030\n",
+      "Epoch 00004: saving model to model.h5\n",
+      "192/192 [==============================] - 19s 100ms/step - loss: 1.5099 - accuracy: 0.4030 - val_loss: 1.4875 - val_accuracy: 0.4085\n",
+      "Epoch 5/15\n",
+      "191/192 [============================>.] - ETA: 0s - loss: 1.4228 - accuracy: 0.4418\n",
+      "Epoch 00005: saving model to model.h5\n",
+      "192/192 [==============================] - 19s 100ms/step - loss: 1.4225 - accuracy: 0.4417 - val_loss: 1.4613 - val_accuracy: 0.4301\n",
+      "Epoch 6/15\n",
+      "192/192 [==============================] - ETA: 0s - loss: 1.3642 - accuracy: 0.4727\n",
+      "Epoch 00006: saving model to model.h5\n",
+      "192/192 [==============================] - 21s 109ms/step - loss: 1.3642 - accuracy: 0.4727 - val_loss: 1.4280 - val_accuracy: 0.4451\n",
+      "Epoch 7/15\n",
+      "191/192 [============================>.] - ETA: 0s - loss: 1.3041 - accuracy: 0.4987\n",
+      "Epoch 00007: saving model to model.h5\n",
+      "192/192 [==============================] - 21s 112ms/step - loss: 1.3040 - accuracy: 0.4990 - val_loss: 1.3733 - val_accuracy: 0.4791\n",
+      "Epoch 8/15\n",
+      "191/192 [============================>.] - ETA: 0s - loss: 1.2611 - accuracy: 0.5178\n",
+      "Epoch 00008: saving model to model.h5\n",
+      "192/192 [==============================] - 21s 109ms/step - loss: 1.2607 - accuracy: 0.5181 - val_loss: 1.3681 - val_accuracy: 0.4954\n",
+      "Epoch 9/15\n",
+      "191/192 [============================>.] - ETA: 0s - loss: 1.2197 - accuracy: 0.5335\n",
+      "Epoch 00009: saving model to model.h5\n",
+      "192/192 [==============================] - 20s 103ms/step - loss: 1.2200 - accuracy: 0.5336 - val_loss: 1.3608 - val_accuracy: 0.4922\n",
+      "Epoch 10/15\n",
+      "191/192 [============================>.] - ETA: 0s - loss: 1.1840 - accuracy: 0.5484\n",
+      "Epoch 00010: saving model to model.h5\n",
+      "192/192 [==============================] - 22s 115ms/step - loss: 1.1841 - accuracy: 0.5480 - val_loss: 1.3298 - val_accuracy: 0.5000\n",
+      "Epoch 11/15\n",
+      "191/192 [============================>.] - ETA: 0s - loss: 1.1452 - accuracy: 0.5633\n",
+      "Epoch 00011: saving model to model.h5\n",
+      "192/192 [==============================] - 21s 109ms/step - loss: 1.1451 - accuracy: 0.5634 - val_loss: 1.3350 - val_accuracy: 0.5007\n",
+      "Epoch 12/15\n",
+      "191/192 [============================>.] - ETA: 0s - loss: 1.1254 - accuracy: 0.5823\n",
+      "Epoch 00012: saving model to model.h5\n",
+      "192/192 [==============================] - 21s 108ms/step - loss: 1.1259 - accuracy: 0.5822 - val_loss: 1.3033 - val_accuracy: 0.5405\n",
+      "Epoch 13/15\n",
+      "192/192 [==============================] - ETA: 0s - loss: 1.0873 - accuracy: 0.6116\n",
+      "Epoch 00013: saving model to model.h5\n",
+      "192/192 [==============================] - 22s 113ms/step - loss: 1.0873 - accuracy: 0.6116 - val_loss: 1.3352 - val_accuracy: 0.5405\n",
+      "Epoch 14/15\n",
+      "191/192 [============================>.] - ETA: 0s - loss: 1.0435 - accuracy: 0.6273\n",
+      "Epoch 00014: saving model to model.h5\n",
+      "192/192 [==============================] - 21s 107ms/step - loss: 1.0434 - accuracy: 0.6276 - val_loss: 1.2464 - val_accuracy: 0.5784\n",
+      "Epoch 15/15\n",
+      "192/192 [==============================] - ETA: 0s - loss: 1.0244 - accuracy: 0.6424\n",
+      "Epoch 00015: saving model to model.h5\n",
+      "192/192 [==============================] - 23s 119ms/step - loss: 1.0244 - accuracy: 0.6424 - val_loss: 1.2920 - val_accuracy: 0.5431\n",
+      "Test accuracy: 0.54313725233078\n"
+     ]
+
+# The data
+
+    },
+    {
+     "data": {
+      "image/png": "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\n",
+      "text/plain": [
+       "<Figure size 432x288 with 1 Axes>"
+      ]
+     },
+     "metadata": {
+      "needs_background": "light"
+     },
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "filepath = \"model.h5\"\n",
+    "checkpoint = ModelCheckpoint(filepath, verbose=1, save_best_only=False, mode='auto')\n",
+    "callbacks_list = [checkpoint]\n",
+    "\n",
+
+# Training the model
+
+    "history = model.fit(X_train_pad, y_train, validation_data=(X_test_pad, y_test), batch_size=32, epochs=15,callbacks=[callbacks_list])\n",
+    "\n",
+    "scores = model.evaluate(X_test_pad, y_test, verbose=0)\n",
+    "print('Test accuracy:', scores[1])\n",
+    "\n",
+    "pyplot.plot(history.history['accuracy'], label='Training Accuracy')\n",
+    "pyplot.plot(history.history['val_accuracy'], label='Validation Accuracy')\n",
+    "\n",
+    "pyplot.legend()\n",
+    "pyplot.show()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+
+# Serialize your ML model with Pickle to use later
+
+ "filename = 'finalized_model.sav'\n",
+    "pickle.dump(history, open(filename, 'wb'))\n",
+    "\n",
+    " \n",
+    "# some time later...\n",
+    " \n",
+
+# Next Step Loading the model from disk
+
+    "loaded_model = pickle.load(open(filename, 'rb'))\n",
+    "result = loaded_model.score(X_test_pad, y_test)\n",
+    "print(result)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "[[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n",
+      "  0 0 0 0 0 0 0 0 0 0 0 0 0 0]]\n",
+      "['when', 'i', 'enter', 'into', 'dark', 'room']\n",
+      "[[  8   1 784 121 282 167   0   0   0   0   0   0   0   0   0   0   0   0\n",
+      "    0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0\n",
+      "    0   0   0   0   0   0   0   0   0   0   0   0   0   0]]\n"
+     ]
+    }
+   ],
+
+# Predicting unkown data
+
+"source": [
+    "\n",
+    "line=\"when i enter into dark room\"\n",
+    "line_matrix=np.zeros((1,50),dtype=int)\n",
+    "print(line_matrix)\n",
+    "words=line.split(\" \")\n",
+    "print(words)\n",
+    "i=0\n",
+    "for w in words:\n",
+    "    if w in word_index.keys():\n",
+    "        line_matrix[0][i]=word_index[w]\n",
+    "    i+=1\n",
+
+# Line matrix as a input for LSTM layer for above text line
+
+    "print(line_matrix)\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "[0.00634687 0.92215306 0.00659599 0.01825636 0.01560017 0.01115657\n",
+      " 0.01989089]\n",
+      "Emotion is fear\n"
+     ]
+    }
+   ],
+
+# Code for Predicting output on wnknown data
+
+"source": [
+    "output=model.predict(line_matrix,verbose=0)\n",
+    "print(output[0])\n",
+    "a=np.argmax(output[0])\n",
+    "for k,v in encode.items():\n",
+    "    if a==v:\n",
+    "        print(\"Emotion is \" + str(k))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.7.6"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 4
+}
+
+# C# files and implementations. 
+
+# Echobot framework of C. How bot turns on Conversation using Dialog.
+# There are controllers and deployment templates that are important. 
+# Deployment Templaters necessary here are new-rg-parameters, preexisting-rg-parameters, template-with-new-rg, template-with-preexisting-rg
+
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Bot.Builder;
+using Microsoft.Bot.Builder.Dialogs;
+using Microsoft.Bot.Schema;
+
+namespace EchoBot1.Bots
+{
+    public class EchoBot<T> : ActivityHandler where T : Dialog
+
+    {
+        protected readonly Dialog Dialog;
+        protected readonly BotState ConversationState;
+        protected readonly BotState UserState;
+
+        public EchoBot(ConversationState conversationState, UserState userState, T dialog1)
+        {
+            Dialog = dialog1;
+            ConversationState = conversationState;
+            UserState = userState;
+        }
+
+
+
+        protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
+        {
+            await Dialog.RunAsync(turnContext, ConversationState.CreateProperty<DialogState>(nameof(DialogState)), cancellationToken);
+
+
+        }
+        public override async Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken)
+        {
+            await base.OnTurnAsync(turnContext, cancellationToken);
+            await ConversationState.SaveChangesAsync(turnContext, force: false, cancellationToken);
+            await UserState.SaveChangesAsync(turnContext, force: false, cancellationToken);
+
+
+        }
+
+        protected override Task OnEndOfConversationActivityAsync(ITurnContext<IEndOfConversationActivity> turnContext, CancellationToken cancellationToken)
+        {
+            return base.OnEndOfConversationActivityAsync(turnContext, cancellationToken);
+        }
+    }
+}
+
+
+
+
+# Dialogues handle the conversational flow of our model. For predicting the emotions, PredictionEnginePool, EmotionPredictionDialog plays a very important role. 
+# We have added Waterfall Dialog and guiven input as Prompt and Utterance.
+
+using EchoBot1ML.Model;
+using Microsoft.Bot.Builder;
+using Microsoft.Bot.Builder.Dialogs;
+using Microsoft.Extensions.ML;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace EchoBot1.Dialogues
+{
+    public class EmotionPredictionDialog: ComponentDialog
+    {
+        private readonly PredictionEnginePool<ModelInput, ModelOutput> _predictionEnginePool;
+
+        public EmotionPredictionDialog(UserState userState, PredictionEnginePool<ModelInput, ModelOutput>predictionEnginePool) : base(nameof(EmotionPredictionDialog))
+        {
+            _predictionEnginePool = predictionEnginePool;
+            var step = new WaterfallStep[]
+            {
+                QueryStepAsync,
+                QueryStepAsyncc,
+                FinishDialogAsync
+            };
+
+            AddDialog(new WaterfallDialog(nameof(WaterfallDialog),step));
+            AddDialog(new TextPrompt(nameof(TextPrompt)));
+            AddDialog(new TextPrompt(nameof(TextPrompt)));
+
+            InitialDialogId = nameof(WaterfallDialog);
+
+        }
+
+
+        private static async Task<DialogTurnResult> QueryStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
+            {
+            return await stepContext.PromptAsync(nameof(TextPrompt), new PromptOptions
+            {
+                Prompt = MessageFactory.Text("How are you doing?")
+            });
+        }
+
+        private static async Task<DialogTurnResult> QueryStepAsyncc(WaterfallStepContext stepContext, CancellationToken cancellationToken)
+        {
+            stepContext.Values["Prompt"] = stepContext.Result;
+            return await stepContext.PromptAsync(nameof(TextPrompt), new PromptOptions
+            {
+                Prompt = MessageFactory.Text("How was your day? Tell me about events of your day") 
+            });
+        }
+
+        private async Task<DialogTurnResult> FinishDialogAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
+        {
+            stepContext.Values["Utterance"] = stepContext.Result;
+            var stepValues = stepContext.Values;
+
+            var modelInput = new ModelInput
+            {
+                Prompt = (stepValues["Prompt"].ToString()),
+                Utterance= (stepValues["Prompt"].ToString()),
+            };
+
+            var prediction = ConsumeModel.Predict(modelInput);
+            await stepContext.Context.SendActivityAsync($"It feels like you are feeling {prediction.Prediction.ToString()} If I identify your emotion please type yes in chat bot ");
+            return await stepContext.EndDialogAsync(stepContext.Values, cancellationToken: cancellationToken);
+        }
+    }
+}
+
+
+# Generated with Bot Builder V4 SDK Template for Visual Studio CoreBot v4.9.2. It is an ErrorHandler.
+
+using Microsoft.Bot.Builder.Integration.AspNet.Core;
+using Microsoft.Bot.Builder.TraceExtensions;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+
+namespace EchoBot1
+{
+    public class AdapterWithErrorHandler : BotFrameworkHttpAdapter
+    {
+        public AdapterWithErrorHandler(IConfiguration configuration, ILogger<BotFrameworkHttpAdapter> logger)
+            : base(configuration, logger)
+        {
+            OnTurnError = async (turnContext, exception) =>
+            {
+                // Log any leaked exception from the application.
+                logger.LogError(exception, $"[OnTurnError] unhandled error : {exception.Message}");
+
+                // Send a message to the user
+                await turnContext.SendActivityAsync("The bot encountered an error or bug.");
+                await turnContext.SendActivityAsync("To continue to run this bot, please fix the bot source code.");
+
+                // Send a trace activity, which will be displayed in the Bot Framework Emulator
+                await turnContext.TraceActivityAsync("OnTurnError Trace", exception.Message, "https://www.botframework.com/schemas/error", "TurnError");
+            };
+        }
+    }
+}
+
+
+# The Startup file
+
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Bot.Builder;
+using Microsoft.Bot.Builder.Integration.AspNet.Core;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+
+using EchoBot1.Bots;
+using EchoBot1ML.Model;
+using Microsoft.Extensions.ML;
+using EchoBot1.Dialogues;
+
+namespace EchoBot1
+{
+    public class Startup
+    {
+        public Startup(IConfiguration configuration)
+        {
+            Configuration = configuration;
+        }
+
+        public IConfiguration Configuration { get; }
+
+# This method gets called by the runtime. Use this method to add services to the container.
+
+        public void ConfigureServices(IServiceCollection services)
+        {
+            services.AddControllers().AddNewtonsoftJson();
+
+# Now Create the Bot Framework Adapter with error handling enabled.
+
+            services.AddSingleton<IBotFrameworkHttpAdapter, AdapterWithErrorHandler>();
+
+            services.AddSingleton<IStorage, MemoryStorage>();
+            services.AddSingleton<ConversationState>();
+            services.AddSingleton<UserState>();
+            services.AddSingleton<EmotionPredictionDialog>();
+
+# Now Create the bot as a transient. In this case the ASP Controller is expecting an IBot.
+
+            services.AddTransient<IBot, EchoBot<EmotionPredictionDialog>>();
+
+            services.AddPredictionEnginePool<ModelInput, ModelOutput>().FromFile("./MLModel.zip", watchForChanges: false);
+
+
+        }
+
+# This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        {
+            if (env.IsDevelopment())
+            {
+                app.UseDeveloperExceptionPage();
+            }
+
+            app.UseDefaultFiles()
+                .UseStaticFiles()
+                .UseWebSockets()
+                .UseRouting()
+                .UseAuthorization()
+                .UseEndpoints(endpoints =>
+                {
+                    endpoints.MapControllers();
+                });
+
+             app.UseHttpsRedirection();
+        }
+    }
+}

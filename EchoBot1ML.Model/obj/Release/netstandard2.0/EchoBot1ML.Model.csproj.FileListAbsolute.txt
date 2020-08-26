@@ -1,0 +1,10 @@
+C:\Users\Arun Joshi\source\repos\EchoBot1ML.Model\bin\Release\netstandard2.0\MLModel.zip
+C:\Users\Arun Joshi\source\repos\EchoBot1ML.Model\bin\Release\netstandard2.0\EchoBot1ML.Model.deps.json
+C:\Users\Arun Joshi\source\repos\EchoBot1ML.Model\bin\Release\netstandard2.0\EchoBot1ML.Model.dll
+C:\Users\Arun Joshi\source\repos\EchoBot1ML.Model\bin\Release\netstandard2.0\EchoBot1ML.Model.pdb
+C:\Users\Arun Joshi\source\repos\EchoBot1ML.Model\obj\Release\netstandard2.0\EchoBot1ML.Model.csprojAssemblyReference.cache
+C:\Users\Arun Joshi\source\repos\EchoBot1ML.Model\obj\Release\netstandard2.0\EchoBot1ML.Model.AssemblyInfoInputs.cache
+C:\Users\Arun Joshi\source\repos\EchoBot1ML.Model\obj\Release\netstandard2.0\EchoBot1ML.Model.AssemblyInfo.cs
+C:\Users\Arun Joshi\source\repos\EchoBot1ML.Model\obj\Release\netstandard2.0\EchoBot1ML.Model.csproj.CoreCompileInputs.cache
+C:\Users\Arun Joshi\source\repos\EchoBot1ML.Model\obj\Release\netstandard2.0\EchoBot1ML.Model.dll
+C:\Users\Arun Joshi\source\repos\EchoBot1ML.Model\obj\Release\netstandard2.0\EchoBot1ML.Model.pdb
